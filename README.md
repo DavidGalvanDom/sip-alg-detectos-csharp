@@ -1,4 +1,4 @@
-# SIP-ALG-Detectos c#
+# SIP-ALG-Detector c#
 
 SIP-ALG-Detector is an utility to detect routers with SIP ALG enabled. It comes with a client and a server:
 
