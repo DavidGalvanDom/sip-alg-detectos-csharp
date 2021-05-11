@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace client_sip_alg
+namespace server_sip_alg
 {
     public static class Utils
     {
@@ -12,21 +12,21 @@ namespace client_sip_alg
         {
             string result = "";
             Random rand = new Random();
-            
+
             for (int count = 0; numCaracteres > count; count++)
             {
-                result +=  chars.Substring(rand.Next(1, chars.Length - 1), 1);
+                result += chars.Substring(rand.Next(1, chars.Length - 1), 1);
             }
-            
+
             return result;
         }
 
-        public static string GenerateBranch ()
+        public static string GenerateBranch()
         {
             return "z9hG4bK" + Utils.RandomString(8);
         }
 
-        public static string GenerateTag ()
+        public static string GenerateTag()
         {
             return Utils.RandomString(8);
         }
@@ -46,6 +46,12 @@ namespace client_sip_alg
         {
             var base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
             return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+        }
+
+        public static string Base64Encode(string plainText)
+        {
+            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+            return System.Convert.ToBase64String(plainTextBytes);
         }
     }
 }

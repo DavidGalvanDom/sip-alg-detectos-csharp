@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
@@ -54,7 +55,7 @@ namespace server_sip_alg
             string requestFirstLine;
             string requestHeaders;
             string requestBody;
-            //https://github.com/ibc/sip-alg-detector/blob/06628e49e334d4d2b4c6d95d6c6a1b529869fd2a/server/sip-alg-detector-daemon.rb
+            
             try
             {
                 TcpListener server = (TcpListener)arg;
@@ -76,7 +77,6 @@ namespace server_sip_alg
                             try
                             {
                                 var arrEndPoint = client.Client.RemoteEndPoint.ToString().Split(':');
-
                                 string package = Encoding.ASCII.GetString(buffer, 0, count);
                                 int indexHeader = package.IndexOf("\r\n\r\n");
 
@@ -86,16 +86,19 @@ namespace server_sip_alg
                                 requestFirstLine = package.Substring(0, package.IndexOf("\r\n"));
                                 requestHeaders = package.Substring(0, indexHeader);
                             
-                                //int contentLength = Convert.ToInt32(package.Substring(indexHeader + 16, 3));
-
-                                requestBody = package.Substring(indexHeader+8, package.Length - indexHeader);
-                                Console.WriteLine(requestHeaders);
-
-
+                                requestBody = package.Substring(indexHeader + 4, package.Length - 4 - indexHeader);
+                                
                                 if(requestFirstLine.Substring(0,33) == "INVITE sip:sip-alg-detector-ttec@")
                                 {                                    
                                     Console.WriteLine($"{System.DateTime.Now.ToString("yyyyMMddhhmss")}  TCP DEBUG: {requestFirstLine} from {ipSender}:{portSender}");
-                                    GenerateResponses(requestFirstLine, requestHeaders, requestBody, client, ipSender, portSender);
+                                    GenerateResponses(requestFirstLine, requestHeaders, requestBody, client, ipSender, portSender, "TCP");
+                                }
+                                else
+                                {
+                                    //    puts "#{log_time} TCP DEBUG: Invalid Request-URI: '#{log_ruri(request_first_line)}' from #{sender_ip}:#{sender_port}"
+
+                                    //    generate_error_response(request_first_line, request_headers, io, sender_ip, sender_port)
+                                    //    close_connection(io)
                                 }
 
                                 Console.WriteLine(package);
@@ -106,21 +109,9 @@ namespace server_sip_alg
                                 Console.WriteLine($"Not valid client  {exp.Message}");
                             }
 
-                            //if request_first_line = ~ / ^INVITE sip: sip - alg - detector - daemon@/
-                            //             puts "#{log_time} TCP DEBUG: '#{log_ruri(request_first_line)}' from #{sender_ip}:#{sender_port}"
-
-                            //    generate_responses(request_first_line, request_headers, request_body, io, sender_ip, sender_port)
-
-                            //else
-                            //        puts "#{log_time} TCP DEBUG: Invalid Request-URI: '#{log_ruri(request_first_line)}' from #{sender_ip}:#{sender_port}"
-
-                            //    generate_error_response(request_first_line, request_headers, io, sender_ip, sender_port)
-                            //    close_connection(io)
-                            //end
+                            
                             //        request_first_line = io.readline("\r\n")
 
-
-                       
                         }
                     }
 
@@ -142,10 +133,54 @@ namespace server_sip_alg
         }
 
         public static void GenerateResponses(string requestFirstLine, string requestHeaders, 
-                                        string requestBody, TcpClient client, 
-                                        string ipSender, string portSender)
+                                            string requestBody, TcpClient tcpClient, 
+                                            string ipSender, string portSender, string type)
         {
+            /// Generate a 180 reply containing the mirrored request first line and headers.
+            string responseFirstLine = "SIP/2.0 180 Body contains mirrored request first line and headers\r\n";
+            
+            string responsBody = Utils.Base64Encode(requestFirstLine + requestHeaders);
+            string responseHeaders = (string) requestHeaders.Clone();
+
+            responseHeaders = "Server: SipAlgDetectorDaemon\r\n" + responseHeaders;
+            
+            responseHeaders = responseHeaders.Replace(";rport", $";received={ipSender};rport={portSender}");
+            responseHeaders = responseHeaders.Insert(responseHeaders.IndexOf('>', responseHeaders.IndexOf("To:"))+1,
+                                                     $"; tag={Utils.RandomString(6, "0123456789")}");
+            responseHeaders = responseHeaders.Replace("application/sdp", "text/plain");
+
+            int indexResponseSize = responseHeaders.IndexOf("Content-Length: ") + 16;
+
+            responseHeaders = responseHeaders.Remove(indexResponseSize, (responseHeaders.Length - indexResponseSize));
+            responseHeaders = responseHeaders.Insert(indexResponseSize, $"{responsBody.Length}\r\n");
+            
+            string response = responseFirstLine + responseHeaders + responsBody;
+
+            var buffer = Encoding.ASCII.GetBytes(response);
+
+            tcpClient.Client.Send(buffer, buffer.Length,SocketFlags.None);
+
+            /// Generate a 500 reply containing the mirrored request body.
+            responseFirstLine = "SIP/2.0 500 Body contains mirrored request body\r\n";
+            responsBody = Utils.Base64Encode(requestBody);
+            responseHeaders = (string)requestHeaders.Clone();
+            responseHeaders = "Server: SipAlgDetectorDaemon\r\n" + responseHeaders;
+            responseHeaders = responseHeaders.Replace(";rport", $";received={ipSender};rport={portSender}");
+            responseHeaders = responseHeaders.Insert(responseHeaders.IndexOf('>', responseHeaders.IndexOf("To:")) + 1,
+                                                   $"; tag={Utils.RandomString(6, "0123456789")}");
+            responseHeaders = responseHeaders.Replace("application/sdp", "text/plain");
+            indexResponseSize = responseHeaders.IndexOf("Content-Length: ") + 16;
+
+            responseHeaders = responseHeaders.Remove(indexResponseSize, (responseHeaders.Length - indexResponseSize));
+            responseHeaders = responseHeaders.Insert(indexResponseSize, $"{responsBody.Length}\r\n");            
+            response = responseFirstLine + responseHeaders + responsBody;
+            
+            buffer = Encoding.ASCII.GetBytes(response);
+
+            tcpClient.Client.Send(buffer, buffer.Length, SocketFlags.None);
 
         }
+
+       
     }
 }

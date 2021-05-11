@@ -59,6 +59,29 @@ namespace client_sip_alg
 
                             
                             tcpStream.Write(buffer, 0, buffer.Length);
+
+                            var data = new Byte[256];
+
+                            // String to store the response ASCII representation.
+                            String responseData = String.Empty;
+
+                            // Read the first batch of the TcpServer response bytes.
+                            Int32 bytes = tcpStream.Read(data, 0, data.Length);
+
+
+                            while (bytes > 0) {
+
+                                responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+                                Console.WriteLine("Received: {0}", responseData);
+
+                                if (bytes < 256)
+                                    bytes = 0;
+                                else
+                                    bytes = tcpStream.Read(data, 0, data.Length);
+                            }
+
+                            
+
                             break;
                     }
                 }
@@ -94,9 +117,9 @@ namespace client_sip_alg
                    $"c=IN IP4 {ipLocal}\r\n" +
                    $"t=0 0\r\n" +
                    $"m=audio {Utils.RandomString(4, "123456789")} RTP/AVP 8 0 3 101\r\n" +
-                   $"a=rtpmap:8 PCMA / 8000\r\n" +
-                   $"a=rtpmap:0 PCMU / 8000\r\n" +
-                   $"a=rtpmap:3 GSM / 8000\r\n" +
+                   $"a=rtpmap:8 PCMA/8000\r\n" +
+                   $"a=rtpmap:0 PCMU/8000\r\n" +
+                   $"a=rtpmap:3 GSM/8000\r\n" +
                    $"a=rtpmap:101 telephone-event/8000\r\n" +
                    $"a=fmtp:101 0-15\r\n" +
                    $"a=ptime:20\r\n";
