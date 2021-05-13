@@ -30,6 +30,11 @@ namespace server_sip_alg
                     {
                         Console.WriteLine("UDP: " + Encoding.ASCII.GetString(buffer));
                     }
+                    string response = "udp responde";
+
+                    var bufferResp = Encoding.ASCII.GetBytes(response);
+
+                    server.Send(bufferResp, bufferResp.Length, remoteEP);                    
                 }
             }
             catch (SocketException ex)
@@ -44,7 +49,6 @@ namespace server_sip_alg
 
             Console.WriteLine("UDP server thread finished");
         }
-
 
         public static void TCPServer(object arg)
         {
@@ -67,13 +71,10 @@ namespace server_sip_alg
                 while (true)
                 {
                     TcpClient client = server.AcceptTcpClient();
-
                     using (var stream = client.GetStream())
                     {
-
                         while ((count = stream.Read(buffer, 0, buffer.Length)) != 0)
-                        {
-                            
+                        {                            
                             try
                             {
                                 var arrEndPoint = client.Client.RemoteEndPoint.ToString().Split(':');
@@ -90,31 +91,21 @@ namespace server_sip_alg
                                 
                                 if(requestFirstLine.Substring(0,33) == "INVITE sip:sip-alg-detector-ttec@")
                                 {                                    
-                                    Console.WriteLine($"{System.DateTime.Now.ToString("yyyyMMddhhmss")}  TCP DEBUG: {requestFirstLine} from {ipSender}:{portSender}");
-                                    GenerateResponses(requestFirstLine, requestHeaders, requestBody, client, ipSender, portSender, "TCP");
+                                    Console.WriteLine($"{System.DateTime.Now.ToString("yyyyMMddhhmss")}  TCP DEBUG: {requestFirstLine} from {ipSender}:{portSender}");                                    
+                                    GenerateResponses(requestFirstLine, requestHeaders, requestBody, client, ipSender, portSender);
                                 }
                                 else
                                 {
-                                    //    puts "#{log_time} TCP DEBUG: Invalid Request-URI: '#{log_ruri(request_first_line)}' from #{sender_ip}:#{sender_port}"
-
-                                    //    generate_error_response(request_first_line, request_headers, io, sender_ip, sender_port)
-                                    //    close_connection(io)
+                                    Console.WriteLine($"{System.DateTime.Now.ToString("yyyyMMddhhmss")}  TCP DEBUG: Invalid Request-URI:  {requestFirstLine} from {ipSender}:{portSender}");
+                                    GenerateErrorResponse(requestFirstLine, requestHeaders, client, ipSender, portSender);
                                 }
-
-                                Console.WriteLine(package);
-
                             }
                             catch(Exception exp)
                             {
                                 Console.WriteLine($"Not valid client  {exp.Message}");
                             }
-
-                            
-                            //        request_first_line = io.readline("\r\n")
-
                         }
                     }
-
 
                     client.Close();
                 }
@@ -132,36 +123,63 @@ namespace server_sip_alg
             Console.WriteLine("TCP server thread finished");
         }
 
+        public static void GenerateErrorResponse(string requestFirstLine, string requestHeaders,
+                                                 TcpClient tcpClient, string ipSender, 
+                                                 string portSender)
+        {
+
+            // Generate a 403 error response
+
+            // IF an ACK ignore it.
+            if (requestFirstLine.Contains("ACK")) return;
+            
+            string responseFirstLine = "SIP/2.0 403 You seem a real phone, get out\r\n";
+            string responseHeaders = (string)requestHeaders.Clone();
+
+            responseHeaders = "Server: SipAlgDetectorDaemon\r\n" + responseHeaders;
+            responseHeaders = responseHeaders.Replace(";rport", $";received={ipSender};rport={portSender}");
+            responseHeaders = responseHeaders.Insert(responseHeaders.IndexOf('>', responseHeaders.IndexOf("To:")) + 1,
+                                                     $"; tag={Utils.RandomString(6, "0123456789")}");
+            responseHeaders = responseHeaders.Replace("Content-Type: application/sdp", "");
+            int indexResponseSize = responseHeaders.IndexOf("Content-Length: ");
+            responseHeaders = responseHeaders.Remove(indexResponseSize, (responseHeaders.Length - indexResponseSize));
+            
+            string response = responseFirstLine + responseHeaders;
+
+            var buffer = Encoding.ASCII.GetBytes(response);
+
+            tcpClient.Client.Send(buffer, buffer.Length, SocketFlags.None);
+        }
+
         public static void GenerateResponses(string requestFirstLine, string requestHeaders, 
                                             string requestBody, TcpClient tcpClient, 
-                                            string ipSender, string portSender, string type)
+                                            string ipSender, string portSender)
         {
             /// Generate a 180 reply containing the mirrored request first line and headers.
-            string responseFirstLine = "SIP/2.0 180 Body contains mirrored request first line and headers\r\n";
+            string responseFirstLine = "SIP//2.0 180 Body contains mirrored request first line and headers\r\n";
             
-            string responsBody = Utils.Base64Encode(requestFirstLine + requestHeaders);
+            string responsBody = Utils.Base64Encode(requestHeaders);
             string responseHeaders = (string) requestHeaders.Clone();
 
             responseHeaders = "Server: SipAlgDetectorDaemon\r\n" + responseHeaders;
-            
             responseHeaders = responseHeaders.Replace(";rport", $";received={ipSender};rport={portSender}");
             responseHeaders = responseHeaders.Insert(responseHeaders.IndexOf('>', responseHeaders.IndexOf("To:"))+1,
                                                      $"; tag={Utils.RandomString(6, "0123456789")}");
             responseHeaders = responseHeaders.Replace("application/sdp", "text/plain");
-
             int indexResponseSize = responseHeaders.IndexOf("Content-Length: ") + 16;
 
             responseHeaders = responseHeaders.Remove(indexResponseSize, (responseHeaders.Length - indexResponseSize));
             responseHeaders = responseHeaders.Insert(indexResponseSize, $"{responsBody.Length}\r\n");
-            
-            string response = responseFirstLine + responseHeaders + responsBody;
+            string response = responseFirstLine + responseHeaders + responsBody + "\r\n";
+
+            //Console.WriteLine($"\r\n\r\nfirst line and headers:\r\n {response}");
 
             var buffer = Encoding.ASCII.GetBytes(response);
-
+            
             tcpClient.Client.Send(buffer, buffer.Length,SocketFlags.None);
 
             /// Generate a 500 reply containing the mirrored request body.
-            responseFirstLine = "SIP/2.0 500 Body contains mirrored request body\r\n";
+            responseFirstLine = "SIP//2.0 500 Body contains mirrored request body\r\n";
             responsBody = Utils.Base64Encode(requestBody);
             responseHeaders = (string)requestHeaders.Clone();
             responseHeaders = "Server: SipAlgDetectorDaemon\r\n" + responseHeaders;
@@ -175,10 +193,10 @@ namespace server_sip_alg
             responseHeaders = responseHeaders.Insert(indexResponseSize, $"{responsBody.Length}\r\n");            
             response = responseFirstLine + responseHeaders + responsBody;
             
+            //Console.WriteLine($"\r\n\r\nbody: \r\n{response}");
+
             buffer = Encoding.ASCII.GetBytes(response);
-
-            tcpClient.Client.Send(buffer, buffer.Length, SocketFlags.None);
-
+            tcpClient.Client.Send(buffer, buffer.Length, SocketFlags.None);            
         }
 
        

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace client_sip_alg
 {
     public static class Utils
-    {
+    {        
         public static string RandomString(int numCaracteres = 6, string chars = "abcdefghjkmnpqrstuvwxyz0123456789")
         {
             string result = "";

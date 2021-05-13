@@ -54,6 +54,7 @@ namespace server_sip_alg
                 };
                 tcpThread.Start(tcpServer);
 
+                Console.WriteLine($"Starting TCP servers on port { General.PORT_NUMBER }... \n");
             }
             catch (Exception e)
             {
@@ -91,10 +92,6 @@ namespace server_sip_alg
                     _UDPThread.Abort();
             }
         }
-
-
-
-
-        
+                
     }
 }
