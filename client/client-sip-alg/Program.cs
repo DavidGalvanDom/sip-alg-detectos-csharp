@@ -85,7 +85,7 @@ namespace client_sip_alg
             StringBuilder responseData;
 
             string mirrorRequest = "";
-            int sizeBytes = 1024;            
+            int sizeBytes = 250;            
             Int32 bytes;
             byte[] buffer;
             byte[] dataResponse;
@@ -131,7 +131,8 @@ namespace client_sip_alg
                         tcpClient.Dispose();
                         tcpClient = null;
 
-                        mirrorRequest = GetMirrorRequest(responseData.ToString());
+                        //mirrorRequest = GetMirrorRequest(responseData.ToString());
+                        mirrorRequest = GetMirrorRequestNoSIP(responseData.ToString());
                     }
                     else
                     {
@@ -207,6 +208,28 @@ namespace client_sip_alg
             return headers + "\r\n" + body;
         }
 
+
+        public static string GetMirrorRequestNoSIP(string mirrorRequest)
+        {
+            string[] stringNewLine = new string[] { "\r\n" };
+            string origenMirrorRequest;
+            var arrMirrorRequest = mirrorRequest.Split(stringNewLine, StringSplitOptions.None);
+
+            //// 100: Request first line and headers
+            //string firstLine = arrMirrorRequest[1];
+            //if (!firstLine.Contains("Server: SipAlgDetectorDaemon"))
+            //{
+            //    throw new ApplicationException("The server is not a SIP-ALG-Detector daemon");
+            //}
+
+            string mirrorRequestFirstLineHeaders = Utils.Base64Decode(arrMirrorRequest[1]);
+            string mirrorRequestBody = Utils.Base64Decode(arrMirrorRequest[3]);
+
+            origenMirrorRequest = mirrorRequestFirstLineHeaders + "\r\n\r\n" + mirrorRequestBody;
+
+            return origenMirrorRequest;
+        }
+
         public static string GetMirrorRequest (string mirrorRequest)
         {
             string[] stringNewLine = new string[] { "\r\n" };
@@ -215,7 +238,7 @@ namespace client_sip_alg
 
             // 100: Request first line and headers
             string firstLine = arrMirrorRequest[1];
-            if(!firstLine.Contains("erver: SipAlgDetectorDaemon"))
+            if(!firstLine.Contains("Server: SipAlgDetectorDaemon"))
             {
                 throw new ApplicationException("The server is not a SIP-ALG-Detector daemon");
             }

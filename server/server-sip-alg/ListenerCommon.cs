@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
+using System.IO;
 
 namespace server_sip_alg
 {
@@ -71,6 +72,7 @@ namespace server_sip_alg
                 while (true)
                 {
                     TcpClient client = server.AcceptTcpClient();
+                    
                     using (var stream = client.GetStream())
                     {
                         while ((count = stream.Read(buffer, 0, buffer.Length)) != 0)
@@ -92,12 +94,13 @@ namespace server_sip_alg
                                 if(requestFirstLine.Substring(0,33) == "INVITE sip:sip-alg-detector-ttec@")
                                 {                                    
                                     Console.WriteLine($"{System.DateTime.Now.ToString("yyyyMMddhhmss")}  TCP DEBUG: {requestFirstLine} from {ipSender}:{portSender}");                                    
-                                    GenerateResponses(requestFirstLine, requestHeaders, requestBody, client, ipSender, portSender);
+                                    //GenerateResponses( requestHeaders, requestBody, stream, ipSender, portSender);
+                                    GenerateResponsesNoSIP(requestHeaders, requestBody, stream);
                                 }
                                 else
                                 {
                                     Console.WriteLine($"{System.DateTime.Now.ToString("yyyyMMddhhmss")}  TCP DEBUG: Invalid Request-URI:  {requestFirstLine} from {ipSender}:{portSender}");
-                                    GenerateErrorResponse(requestFirstLine, requestHeaders, client, ipSender, portSender);
+                                    GenerateErrorResponse(requestFirstLine, requestHeaders, stream, ipSender, portSender);
                                 }
                             }
                             catch(Exception exp)
@@ -124,7 +127,7 @@ namespace server_sip_alg
         }
 
         public static void GenerateErrorResponse(string requestFirstLine, string requestHeaders,
-                                                 TcpClient tcpClient, string ipSender, 
+                                                 NetworkStream netStream, string ipSender, 
                                                  string portSender)
         {
 
@@ -148,16 +151,26 @@ namespace server_sip_alg
 
             var buffer = Encoding.ASCII.GetBytes(response);
 
-            tcpClient.Client.Send(buffer, buffer.Length, SocketFlags.None);
+            netStream.Write(buffer,0, buffer.Length);
         }
 
-        public static void GenerateResponses(string requestFirstLine, string requestHeaders, 
-                                            string requestBody, TcpClient tcpClient, 
-                                            string ipSender, string portSender)
+        public static void GenerateResponsesNoSIP(string requestHeaders, string requestBody,
+                                            NetworkStream netStream)
+        {
+            string responsHeaders = Utils.Base64Encode(requestHeaders);
+            string responsBody = Utils.Base64Encode(requestBody);
+            string response = $"Header:\r\n{responsHeaders}\r\n Body:\r\n{responsBody}";
+            Console.WriteLine(response);
+            var buffer = Encoding.ASCII.GetBytes(response);
+            netStream.Write(buffer, 0, buffer.Length);
+        }
+
+        public static void GenerateResponses(string requestHeaders, string requestBody, 
+                                            NetworkStream netStream, string ipSender, 
+                                            string portSender)
         {
             /// Generate a 180 reply containing the mirrored request first line and headers.
-            string responseFirstLine = "SIP//2.0 180 Body contains mirrored request first line and headers\r\n";
-            
+            string responseFirstLine = "SIP/2.0 180 Body contains mirrored request first line and headers\r\n";            
             string responsBody = Utils.Base64Encode(requestHeaders);
             string responseHeaders = (string) requestHeaders.Clone();
 
@@ -170,33 +183,30 @@ namespace server_sip_alg
 
             responseHeaders = responseHeaders.Remove(indexResponseSize, (responseHeaders.Length - indexResponseSize));
             responseHeaders = responseHeaders.Insert(indexResponseSize, $"{responsBody.Length}\r\n");
-            string response = responseFirstLine + responseHeaders + responsBody + "\r\n";
+            string responseFH = responseFirstLine + responseHeaders + responsBody + "\r\n";
 
-            //Console.WriteLine($"\r\n\r\nfirst line and headers:\r\n {response}");
+            var buffer = Encoding.ASCII.GetBytes(responseFH);
+            netStream.Write(buffer, 0, buffer.Length);
 
-            var buffer = Encoding.ASCII.GetBytes(response);
-            
-            tcpClient.Client.Send(buffer, buffer.Length,SocketFlags.None);
+            //Console.WriteLine($"\r\n\r\nSend bytes:\r\n{numSend}"); 
 
             /// Generate a 500 reply containing the mirrored request body.
-            responseFirstLine = "SIP//2.0 500 Body contains mirrored request body\r\n";
+            responseFirstLine = "SIP/2.0 500 Body contains mirrored request body\r\n";            
             responsBody = Utils.Base64Encode(requestBody);
             responseHeaders = (string)requestHeaders.Clone();
             responseHeaders = "Server: SipAlgDetectorDaemon\r\n" + responseHeaders;
             responseHeaders = responseHeaders.Replace(";rport", $";received={ipSender};rport={portSender}");
             responseHeaders = responseHeaders.Insert(responseHeaders.IndexOf('>', responseHeaders.IndexOf("To:")) + 1,
-                                                   $"; tag={Utils.RandomString(6, "0123456789")}");
+                                                   $"; tag={Utils.RandomString(6, "0123456789")}");            
             responseHeaders = responseHeaders.Replace("application/sdp", "text/plain");
             indexResponseSize = responseHeaders.IndexOf("Content-Length: ") + 16;
 
             responseHeaders = responseHeaders.Remove(indexResponseSize, (responseHeaders.Length - indexResponseSize));
             responseHeaders = responseHeaders.Insert(indexResponseSize, $"{responsBody.Length}\r\n");            
-            response = responseFirstLine + responseHeaders + responsBody;
-            
-            //Console.WriteLine($"\r\n\r\nbody: \r\n{response}");
-
+            string response = responseFirstLine + responseHeaders + responsBody;
+          
             buffer = Encoding.ASCII.GetBytes(response);
-            tcpClient.Client.Send(buffer, buffer.Length, SocketFlags.None);            
+            netStream.Write(buffer, 0, buffer.Length);
         }
 
        

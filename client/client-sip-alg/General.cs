@@ -8,8 +8,12 @@ namespace client_sip_alg
 {
     public static class General
     {
+        /// <summary>
+        /// load balancer 170.65.129.182
+        /// </summary>
+
         public const int PORT_NUMBER = 5060;
-        public const string SERVER = "10.48.247.190";//"127.0.0.1"; 
+        public const string SERVER = "10.48.247.190"; //"10.48.247.190";//"127.0.0.1"; 
         public const int NUM_MAX_CONNECTE = 150;
     }
 }
