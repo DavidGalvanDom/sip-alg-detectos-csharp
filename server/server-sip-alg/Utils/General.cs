@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace server_sip_alg.Utilis
+namespace server_sip_alg.Utils
 {
     public static class General
     {

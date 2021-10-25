@@ -60,7 +60,7 @@
     <Compile Include="Services\HttpEnvelopeService.cs" />
     <Compile Include="Services\ListenerTCPService.cs" />
     <Compile Include="Services\ListenerUDPService.cs" />
-    <Compile Include="Utilis\General.cs" />
+    <Compile Include="Utils\General.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
