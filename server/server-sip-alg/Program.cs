@@ -1,9 +1,11 @@
 ﻿using System;
-using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
+using Serilog;
+using Serilog.Core;
+
+using server_sip_alg.Services;
 
 namespace server_sip_alg
 {
@@ -12,19 +14,23 @@ namespace server_sip_alg
         public static int Main(String[] args)
         {        
             TcpListener tcpServer = null;
-            UdpClient udpServer = null;
-
+            UdpClient udpServer = null;    
+            
+            Logger log = new LoggerConfiguration()
+                       .WriteTo.Console()
+                       .WriteTo.File("Sip-alg-log.txt")
+                       .CreateLogger();
             try
             {
-                InitUDPServer(ref udpServer);
-                InitTCPServer(ref tcpServer);
+                //InitUDPServer(ref udpServer);
+                InitTCPServer(ref tcpServer, ref log);
 
-                Console.WriteLine("Press <ENTER> to stop the servers.");
+                log.Information("Press <ENTER> to stop the servers.");
                 Console.ReadLine();
             }
             catch (Exception ex)
-            {
-                Console.WriteLine("Main exception: " + ex);
+            {               
+                log.Error($"Main exception: { ex.Message}");
             }
             finally
             {
@@ -39,26 +45,27 @@ namespace server_sip_alg
         }
 
 
-        public static void InitTCPServer(ref TcpListener tcpServer)
+        public static void InitTCPServer(ref TcpListener tcpServer, ref Logger log)
         {
             Thread _TCPThread = null;
-            
+            ListenerTCPService tcpService = new ListenerTCPService(log);
+
             try
             {
-                tcpServer = new TcpListener(IPAddress.Any, General.PORT_NUMBER);
-
-                var tcpThread = new Thread(new ParameterizedThreadStart(ListenerCommon.TCPServer))
+                tcpServer = new TcpListener(IPAddress.Any,Constants.PORT_NUMBER);
+                
+                var tcpThread = new Thread(new ParameterizedThreadStart(tcpService.TCPServer))
                 {
                     IsBackground = true,
                     Name = "TCP server thread"
                 };
                 tcpThread.Start(tcpServer);
 
-                Console.WriteLine($"Starting TCP servers on port { General.PORT_NUMBER }... \n");
+                log.Information($"Starting TCP servers on port { Constants.PORT_NUMBER }... \n");
             }
             catch (Exception e)
             {
-                Console.WriteLine("An TCP Exception has occurred!" + e.ToString());
+                log.Error($"TCP Exception has occurred! {e.Message}");
 
                 if (_TCPThread != null)
                     _TCPThread.Abort();
@@ -69,20 +76,20 @@ namespace server_sip_alg
         public static void InitUDPServer (ref UdpClient udpServer)
         {
             Thread _UDPThread = null;
-        
+            ListenerUDPService udpService = new ListenerUDPService();
             try
             {
-                udpServer = new UdpClient(General.PORT_NUMBER);
+                udpServer = new UdpClient(Constants.PORT_NUMBER);
 
                 //Starting the UDP Listener thread.
-                _UDPThread = new Thread(new ParameterizedThreadStart(ListenerCommon.UDPServer))
+                _UDPThread = new Thread(new ParameterizedThreadStart(udpService.UDPServer))
                 {
                     IsBackground = true,
                     Name = "UDP server thread"
                 };
                 _UDPThread.Start(udpServer);
 
-                Console.WriteLine($"Starting UDP servers on port { General.PORT_NUMBER }... \n");
+                Console.WriteLine($"Starting UDP servers on port { Constants.PORT_NUMBER }... \n");
             }
             catch (Exception e)
             {

@@ -6,6 +6,9 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using Serilog;
+using Serilog.Core;
 
 namespace client_sip_alg
 {
@@ -15,14 +18,19 @@ namespace client_sip_alg
         {           
             ConsoleKeyInfo key;
             bool run = true;
-            
-            Console.WriteLine(string.Format("Starting TCP and UDP clients on port {0}...", General.PORT_NUMBER));
+
+            Logger log = new LoggerConfiguration()
+                       .WriteTo.Console()
+                       .WriteTo.File("Sip-alg-log.txt")
+                       .CreateLogger();
+
+            log.Information(string.Format("Starting TCP and UDP clients on port {0}...", General.PORT_NUMBER));
 
             try
             {            
                 while (run)
                 {
-                    Console.WriteLine("Press 'T' for TCP sending, 'U' for UDP sending or 'X' to exit.");
+                    log.Information("Press 'T' for TCP sending, 'U' for UDP sending or 'X' to exit.");
                     key = Console.ReadKey(true);
 
                     switch (key.Key)
@@ -43,11 +51,11 @@ namespace client_sip_alg
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Main exception: " + ex);
+                log.Error(ex,"Main exception: ");
             }
-           
 
-            Console.WriteLine("Press <ENTER> to exit.");
+
+            log.Information("Press <ENTER> to exit.");
             Console.ReadLine();
         }
 
@@ -85,7 +93,9 @@ namespace client_sip_alg
             StringBuilder responseData;
 
             string mirrorRequest = "";
-            int sizeBytes = 250;            
+            int minSize = 1850;
+            int sizeBytes = 250;
+            int offset = 0;
             Int32 bytes;
             byte[] buffer;
             byte[] dataResponse;
@@ -98,11 +108,15 @@ namespace client_sip_alg
                                                     General.SERVER, 
                                                     "tcp");
 
+                //Console.WriteLine("Cliente request");
+                Console.WriteLine(request);
+                
                 buffer = Encoding.ASCII.GetBytes(request);
 
                 if (tcpClient == null)
                 {
                     tcpClient = new TcpClient();
+                    
                     tcpClient.Connect(General.SERVER, General.PORT_NUMBER);
                     tcpStream = tcpClient.GetStream();
                 }
@@ -116,31 +130,57 @@ namespace client_sip_alg
 
                 //Console.WriteLine("Waiting for response.");
                 // Read the first batch of the TcpServer response bytes.
+
+                // Set a 10 millisecond timeout for reading.
+                tcpStream.ReadTimeout = 10000;
+
                 bytes = tcpStream.Read(dataResponse, 0, dataResponse.Length);
+               // Thread.Sleep(1000);
+                offset += bytes;
 
                 while (bytes > 0)
                 {
                     responseData.Append(System.Text.Encoding.ASCII.GetString(dataResponse, 0, bytes));
 
-                    //Console.WriteLine($"ServerResponse: {responseData}");
-
-                    if (bytes < sizeBytes)
+                    // bytes = tcpStream.Read(dataResponse, offset, dataResponse.Length - offset);
+                    //Console.WriteLine($"Exec {bytes}");
+                    //Console.WriteLine($"offset {offset}");
+            
+                    if (bytes < sizeBytes && 
+                        offset > minSize)
                     {
                         bytes = 0;
                         tcpClient.Close();
                         tcpClient.Dispose();
                         tcpClient = null;
-
-                        //mirrorRequest = GetMirrorRequest(responseData.ToString());
-                        mirrorRequest = GetMirrorRequestNoSIP(responseData.ToString());
+                        //Console.WriteLine("Response Server:");
+                        //Console.WriteLine(responseData.ToString());
+                        mirrorRequest = GetMirrorRequest(responseData.ToString());
+                        responseData.Clear();
                     }
                     else
                     {
                         bytes = tcpStream.Read(dataResponse, 0, dataResponse.Length);
                     }
+
+                    offset += bytes;
                 }
 
-                bool tcpAlgTest = CompareRequestAndMirror(request, mirrorRequest);
+                //Validate an error
+                if(responseData.Length > 0) {
+                    throw new ApplicationException(responseData.ToString());
+                }
+
+                bool tcpAlgTest = false;
+                if (mirrorRequest.Trim() != string.Empty) {
+                    tcpAlgTest = CompareRequestAndMirror(request, mirrorRequest);
+                } else
+                {
+                    Console.WriteLine("\n__________________________________________________________________");
+                    Console.WriteLine("         ERROR:      Server no data response");
+                    Console.WriteLine("\n__________________________________________________________________");
+                    return;
+                }
 
                 Console.WriteLine("\n__________________________________________________________________");
                 Console.WriteLine($"INFO: SIP TCP ALG test result: {tcpAlgTest}");
@@ -160,7 +200,9 @@ namespace client_sip_alg
             }
             catch (Exception exp)
             {
-                Console.WriteLine($"ERROR: CreateTCPRequest Message:{exp.Message}");
+                Console.WriteLine("\n_____________________________ERROR_____________________________________");
+                Console.WriteLine($" {Environment.NewLine}{exp.Message}");
+                Console.WriteLine("\n__________________________________________________________________");
             }
             finally
             {
@@ -190,8 +232,12 @@ namespace client_sip_alg
                    $"a=ptime:20\r\n";
 
             body = Regex.Replace(body, @"\s|\t", "");
+            
+            string headerName = "ttec";            
+            if (ipServer == "199.180.223.109")
+                headerName = "daemon";
 
-            string headers = $"INVITE sip:sip-alg-detector-ttec@{ipServer}:{portServer} SIP/2.0\r\n" +
+            string headers = $"INVITE sip:sip-alg-detector-{headerName}@{ipServer}:{portServer} SIP/2.0\r\n" +
                     $"Via: SIP/2.0/{transport.ToUpper()} {ipLocal}:{portLocal};rport;branch={Utils.GenerateBranch()}\r\n" +
                     $"Max-Forwards: 5\r\n" +
                     $"To: <sip:sip-alg-detector-ttec@{ipServer}:{portServer}>\r\n" +
@@ -243,10 +289,13 @@ namespace client_sip_alg
                 throw new ApplicationException("The server is not a SIP-ALG-Detector daemon");
             }
 
-            string mirrorRequestFirstLineHeaders = Utils.Base64Decode(arrMirrorRequest[13]);
+            var newArr = arrMirrorRequest[13].Split('\n');
+            var mirrorHead = newArr.Take(newArr.Length-1);
+
+            string mirrorRequestFirstLineHeaders = Utils.Base64Decode(string.Join("", mirrorHead));
             string mirrorRequestBody = Utils.Base64Decode(arrMirrorRequest[arrMirrorRequest.Length - 1]);
 
-            origenMirrorRequest = mirrorRequestFirstLineHeaders + "\r\n\r\n" +  mirrorRequestBody;
+            origenMirrorRequest = mirrorRequestFirstLineHeaders +  mirrorRequestBody;
 
             return origenMirrorRequest;
         }
@@ -263,7 +312,7 @@ namespace client_sip_alg
             for(int count = 0; count < arrRequest.Length; count++)
             {
                 if( arrRequest[count] != arrMirrorRequest[count])                
-                    lstDiff.Add(arrMirrorRequest[count]);                
+                    lstDiff.Add(arrRequest[count] + " -- " + arrMirrorRequest[count]);                
             }
 
             if(lstDiff.Count > 0)
