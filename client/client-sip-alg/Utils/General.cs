@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace client_sip_alg
 {
-    public static class Utils
+    public static class General
     {        
         public static string RandomString(int numCaracteres = 6, string chars = "abcdefghjkmnpqrstuvwxyz0123456789")
         {
@@ -23,17 +23,17 @@ namespace client_sip_alg
 
         public static string GenerateBranch ()
         {
-            return "z9hG4bK" + Utils.RandomString(8);
+            return "z9hG4bK" + General.RandomString(8);
         }
 
         public static string GenerateTag ()
         {
-            return Utils.RandomString(8);
+            return General.RandomString(8);
         }
 
         public static string GenerateCallid()
         {
-            return Utils.RandomString(10);
+            return General.RandomString(10);
         }
 
         public static string GenerateCseq()

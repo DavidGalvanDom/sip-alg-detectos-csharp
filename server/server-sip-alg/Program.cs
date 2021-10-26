@@ -14,15 +14,13 @@ namespace server_sip_alg
         public static int Main(String[] args)
         {        
             TcpListener tcpServer = null;
-            UdpClient udpServer = null;    
-            
-            Logger log = new LoggerConfiguration()
-                       .WriteTo.Console()
-                       .WriteTo.File("Sip-alg-log.txt")
-                       .CreateLogger();
+            UdpClient udpServer = null;
+
+            Logger log = new ConfigLog().CreateLogerConfig();
+
             try
             {
-                //InitUDPServer(ref udpServer);
+                //InitUDPServer(ref udpServer, ref log);
                 InitTCPServer(ref tcpServer, ref log);
 
                 log.Information("Press <ENTER> to stop the servers.");
@@ -73,7 +71,7 @@ namespace server_sip_alg
 
         }
 
-        public static void InitUDPServer (ref UdpClient udpServer)
+        public static void InitUDPServer (ref UdpClient udpServer, ref Logger log)
         {
             Thread _UDPThread = null;
             ListenerUDPService udpService = new ListenerUDPService();
@@ -89,11 +87,11 @@ namespace server_sip_alg
                 };
                 _UDPThread.Start(udpServer);
 
-                Console.WriteLine($"Starting UDP servers on port { Constants.PORT_NUMBER }... \n");
+                log.Information($"Starting UDP servers on port { Constants.PORT_NUMBER }... \n");
             }
-            catch (Exception e)
+            catch (Exception exp)
             {
-                Console.WriteLine("An UDP Exception has occurred!" + e.ToString());
+                log.Error(exp , "An UDP Exception has occurred!");
 
                 if (_UDPThread != null)
                     _UDPThread.Abort();

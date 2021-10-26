@@ -46,9 +46,10 @@ namespace server_sip_alg.Services
                                 stream.Flush();
 
                                 if(bodyBuffer != null)
-                                   stream.Write(bodyBuffer, 0, bodyBuffer.Length);
-                               
-                                stream.Flush();
+                                {
+                                    stream.Write(bodyBuffer, 0, bodyBuffer.Length);                               
+                                    stream.Flush();
+                                }
                             }
                         }
 
@@ -110,6 +111,7 @@ namespace server_sip_alg.Services
                     else
                     {
                         headerBuffer = evelopService.GenerateErrorResponse(commInfo);
+                        _log.Error($"Finish with error response.");
                     }
 
                     packageRequest.Clear();
@@ -117,7 +119,7 @@ namespace server_sip_alg.Services
             }
             catch (Exception exp)
             {
-                _log.Information(exp, $" Package: {packageRequest}");                                
+                _log.Error(exp, $" Package: {packageRequest}");                                
             }
             finally
             {
