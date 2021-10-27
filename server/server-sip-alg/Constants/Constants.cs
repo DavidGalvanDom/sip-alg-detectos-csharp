@@ -18,7 +18,14 @@ namespace server_sip_alg
         public const int SIZE_READ_BUFFER = 2048;
         public const int SIZE_APLICE_BODY = 60;
 
+        //Guard size package 
+        public const int SIZE_REQUEST_MIN = 25;
+
         //Error
         public const int ERROR_NUM_UNEXPECTED = 10004;
+
+        //Transport
+        public const string UDP_TRANSPORT = "UDP";
+        public const string TCP_TRANSPORT = "TCP";
     }
 }

@@ -6,7 +6,7 @@ using server_sip_alg.Extension;
 
 namespace server_sip_alg.Services
 {
-    public class HttpEnvelopeService
+    public class ResponseStringService
     {
         public byte[] CreateMirrorHeader(CommunicationInfo communicaitonInfo)
         {

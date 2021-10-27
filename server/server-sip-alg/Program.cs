@@ -17,11 +17,11 @@ namespace server_sip_alg
             UdpClient udpServer = null;
 
             Logger log = new ConfigLog().CreateLogerConfig();
-
+            ResponseStringService reponseService = new ResponseStringService();
             try
             {
-                //InitUDPServer(ref udpServer, ref log);
-                InitTCPServer(ref tcpServer, ref log);
+                InitUDPServer(ref udpServer, ref log, ref reponseService);
+                InitTCPServer(ref tcpServer, ref log, ref reponseService);
 
                 log.Information("Press <ENTER> to stop the servers.");
                 Console.ReadLine();
@@ -43,10 +43,10 @@ namespace server_sip_alg
         }
 
 
-        public static void InitTCPServer(ref TcpListener tcpServer, ref Logger log)
+        public static void InitTCPServer(ref TcpListener tcpServer, ref Logger log, ref ResponseStringService reponseService)
         {
             Thread _TCPThread = null;
-            ListenerTCPService tcpService = new ListenerTCPService(log);
+            ListenerTCPService tcpService = new ListenerTCPService(log, reponseService);
 
             try
             {
@@ -71,10 +71,10 @@ namespace server_sip_alg
 
         }
 
-        public static void InitUDPServer (ref UdpClient udpServer, ref Logger log)
+        public static void InitUDPServer (ref UdpClient udpServer, ref Logger log, ref ResponseStringService reponseService)
         {
             Thread _UDPThread = null;
-            ListenerUDPService udpService = new ListenerUDPService();
+            ListenerUDPService udpService = new ListenerUDPService(log, reponseService);
             try
             {
                 udpServer = new UdpClient(Constants.PORT_NUMBER);

@@ -11,10 +11,12 @@ namespace server_sip_alg.Services
     public class ListenerTCPService
     {
         private readonly Logger _log;
+        private readonly ResponseStringService _reponseService;
 
-        public ListenerTCPService(Logger log)
+        public ListenerTCPService(Logger log, ResponseStringService reponseService)
         {
             _log = log;
+            _reponseService = reponseService;
         }
 
         public void TCPServer(object arg)
@@ -40,15 +42,18 @@ namespace server_sip_alg.Services
                         {
                             while ((dataLength = stream.Read(buffer, 0, buffer.Length)) != 0)
                             {
-                                var headerBuffer = GetRequestData(buffer, dataLength, arrEndPoint, out bodyBuffer);
+                                var headerBuffer = CreateResponseData(buffer, dataLength, arrEndPoint, out bodyBuffer);
 
-                                stream.Write(headerBuffer, 0, headerBuffer.Length);
-                                stream.Flush();
-
-                                if(bodyBuffer != null)
+                                if( headerBuffer != null)
                                 {
-                                    stream.Write(bodyBuffer, 0, bodyBuffer.Length);                               
+                                    stream.Write(headerBuffer, 0, headerBuffer.Length);
                                     stream.Flush();
+
+                                    if(bodyBuffer != null)
+                                    {
+                                        stream.Write(bodyBuffer, 0, bodyBuffer.Length);                               
+                                        stream.Flush();
+                                    }
                                 }
                             }
                         }
@@ -57,35 +62,35 @@ namespace server_sip_alg.Services
                     }
                     catch (IOException ioEx)
                     {
-                        _log.Error(ioEx, "IOException TCP Server thread");
+                        _log.Error(ioEx, "TCP IOException TCP Server thread");
                     }
                     catch (SocketException ex)
                     {
                         if (ex.ErrorCode != Constants.ERROR_NUM_UNEXPECTED) // unexpected
-                            _log.Error(ex, "CPServerProc exception");
+                            _log.Error(ex, "TCPServerProc exception");
                     }
                 }
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "CPServerProc exception");
+                _log.Error(ex, "TCPServerProc exception");
             }
 
             _log.Information("TCP server thread finished");
         }
 
 
-        private byte[] GetRequestData(byte[] buffer, int dataLength, 
+        private byte[] CreateResponseData(byte[] buffer, int dataLength, 
                                       string[] arrEndPoint, out byte[] bodyBuffer)
         {
-            HttpEnvelopeService evelopService = new HttpEnvelopeService();
+            
             StringBuilder packageRequest = new StringBuilder();
             byte[] headerBuffer = null;
             bodyBuffer = null;
 
             try
             {
-                _log.Information($"Request read - Stream count:{dataLength}");
+                _log.Information($"TCP Request read - Stream count:{dataLength}");
 
                 packageRequest.Append(Encoding.ASCII.GetString(buffer, 0, dataLength));
 
@@ -104,14 +109,14 @@ namespace server_sip_alg.Services
 
                     if (commInfo.RequestFirstLine.Substring(0, Constants.SIZE_FIRST_LINE_REQUEST) == "INVITE sip:sip-alg-detector-ttec@")
                     {
-                        headerBuffer = evelopService.CreateMirrorHeader(commInfo);                        
-                        bodyBuffer = evelopService.CreateMirrorBody(commInfo);       
-                        _log.Information($"Finish response.");
+                        headerBuffer = _reponseService.CreateMirrorHeader(commInfo);                        
+                        bodyBuffer = _reponseService.CreateMirrorBody(commInfo);       
+                        _log.Information("TCP Finish response.");
                     }
                     else
                     {
-                        headerBuffer = evelopService.GenerateErrorResponse(commInfo);
-                        _log.Error($"Finish with error response.");
+                        headerBuffer = _reponseService.GenerateErrorResponse(commInfo);
+                        _log.Error(" TCP Finish with error response.");
                     }
 
                     packageRequest.Clear();
@@ -119,7 +124,8 @@ namespace server_sip_alg.Services
             }
             catch (Exception exp)
             {
-                _log.Error(exp, $" Package: {packageRequest}");                                
+                headerBuffer = null;
+                _log.Error(exp, $"TCP Package: {packageRequest}");                         
             }
             finally
             {
