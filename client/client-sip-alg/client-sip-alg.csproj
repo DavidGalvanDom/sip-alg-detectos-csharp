@@ -54,8 +54,10 @@
   <ItemGroup>
     <Compile Include="Constans\Constants.cs" />
     <Compile Include="Enum\ResultCode.cs" />
+    <Compile Include="Extension\StringCompare.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Service\ClientRequestService.cs" />
     <Compile Include="Service\TCPRequestService.cs" />
     <Compile Include="Service\UDPRequestService.cs" />
     <Compile Include="ConfigLog.cs" />

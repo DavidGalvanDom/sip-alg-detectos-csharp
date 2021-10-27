@@ -16,9 +16,10 @@ namespace client_sip_alg
         {                     
             bool run = true;
             Logger log = new ConfigLog().CreateLogerConfig();
+            ClientRequestService requestService = new ClientRequestService(log);
 
             log.Information($"Starting TCP and UDP clients on port {Constants.PORT_NUMBER_LOCAL}...");
-            log.Information($"Server {Constants.SERVER}");
+            log.Information($"Server {Constants.SERVER}" + Environment.NewLine);
 
             try
             {            
@@ -34,12 +35,14 @@ namespace client_sip_alg
                             break;
 
                         case ConsoleKey.U:
-                            UDPRequestService udpService = new UDPRequestService(log);
+                            UDPRequestService udpService = new UDPRequestService(log, requestService);
+                            log.Information("UDP running createRequest ...");
                             udpService.CreateRequest();                            
                             break;
 
                         case ConsoleKey.T:
-                            TCPRequestService tcpService = new TCPRequestService(log);
+                            TCPRequestService tcpService = new TCPRequestService(log, requestService);
+                            log.Information("TCPrunning createRequest ...");
                             tcpService.CreateRequest();
                             break;
                     }
