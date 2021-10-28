@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net;
-using System.Net.Sockets;
 using Serilog.Core;
 
 using client_sip_alg.Service;
@@ -37,7 +32,7 @@ namespace client_sip_alg
                         case ConsoleKey.U:
                             UDPRequestService udpService = new UDPRequestService(log, requestService);
                             log.Information("UDP running createRequest ...");
-                            udpService.CreateRequest();                            
+                            udpService.CreateRequest();
                             break;
 
                         case ConsoleKey.T:

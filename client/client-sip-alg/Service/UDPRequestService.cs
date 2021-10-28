@@ -1,8 +1,9 @@
-﻿using Serilog.Core;
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
+using Serilog.Core;
 
 namespace client_sip_alg.Service
 {
@@ -22,23 +23,22 @@ namespace client_sip_alg.Service
                                        Constants.PORT_NUMBER_SERVER);
         }
 
-
         public  void CreateRequest()
         {
             StringBuilder responseData = new StringBuilder();
             try
             {
-                var packageRequest = SendRequest();
-
+                var packageRequest = SendRequest();               
                 var arrResponseHeader = _udpClient.Receive(ref _endPoint);
                 responseData.Append(System.Text.Encoding.ASCII.GetString(arrResponseHeader, 0, arrResponseHeader.Length));
 
+                Thread.Sleep(100);
+
                 // 1117
-                if(arrResponseHeader.Length < Constants.NUM_MINIMAL_PACKAGE_SIZE)
+                if (_udpClient.Available > 0)
                 {
                     var arrResponseBody = _udpClient.Receive(ref _endPoint);
-                    //769
-                    _log.Information($"Response body size : {arrResponseBody.Length}");
+                    //769                   
                     responseData.Append(System.Text.Encoding.ASCII.GetString(arrResponseBody, 0, arrResponseBody.Length));
                 }
 
@@ -72,6 +72,8 @@ namespace client_sip_alg.Service
             }
             finally
             {
+                _udpClient.Close();
+
                 if (_udpClient != null)
                     _udpClient.Dispose();
             }
@@ -80,13 +82,13 @@ namespace client_sip_alg.Service
         private string SendRequest()
         {   
             byte[] buffer;
-
-            string request = _requestService.CreateStringRequest(IPAddress.Loopback.ToString(), Constants.UDP_TRANSPORT);
+                        
+            string request = _requestService.CreateStringRequest(General.GetLocalIp(), Constants.UDP_TRANSPORT);
             buffer = Encoding.ASCII.GetBytes(request);
 
             if(_udpClient == null)
             {
-                _udpClient = new UdpClient();
+                _udpClient = new UdpClient(Constants.PORT_NUMBER_LOCAL);
                 _udpClient.Client.SendTimeout = Constants.NUM_TIMEOUT_WRITE;
                 _udpClient.Client.ReceiveTimeout = Constants.NUM_TIMEOUT_READ;
             }

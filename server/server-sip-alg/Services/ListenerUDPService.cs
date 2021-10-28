@@ -1,9 +1,10 @@
-﻿using Serilog.Core;
-using server_sip_alg.Model;
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Serilog.Core;
+
+using server_sip_alg.Model;
 
 namespace server_sip_alg.Services
 {
@@ -18,10 +19,10 @@ namespace server_sip_alg.Services
             _reponseService = reponseService;
         }
 
-        public  void UDPServer(object arg)
+        public void UDPServer(object arg)
         {
             UdpClient server = (UdpClient)arg;
-            IPEndPoint remoteEP;
+            IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, Constants.PORT_NUMBER); ;
             byte[] buffer;
             byte[] bodyBuffer;
 
@@ -31,28 +32,24 @@ namespace server_sip_alg.Services
 
                 while (true)
                 {
-                    remoteEP = null;
                     buffer = server.Receive(ref remoteEP);
 
-                    if (buffer != null && 
-                        buffer.Length <= Constants.SIZE_REQUEST_MIN )
-                    {
-                        _log.Information($"UDP requeste: length - {buffer.Length}  {Encoding.ASCII.GetString(buffer)} " );                        
-                    }
+                    if (buffer != null
+                        && buffer.Length != 19 )
+                    {                        
+                        var headerBuffer = CreateResponseData(buffer, buffer.Length,
+                                                            remoteEP.Address.ToString(), remoteEP.Port.ToString(),
+                                                            out bodyBuffer);
+                        if (headerBuffer != null)
+                        {
+                            server.Send(headerBuffer, headerBuffer.Length, remoteEP);
 
-                    var headerBuffer = CreateResponseData(buffer,buffer.Length, 
-                                                         remoteEP.Address.ToString(), remoteEP.Port.ToString(), 
-                                                         out bodyBuffer);
-                    if (headerBuffer != null)
-                    {
-                        server.Send(headerBuffer, headerBuffer.Length, remoteEP);
-                        _log.Information("******* send header");
-
-                        if (bodyBuffer != null)
-                            server.Send(bodyBuffer, bodyBuffer.Length, remoteEP);
-
-                        _log.Information("******** send buffer");
-                    }                    
+                            if (bodyBuffer != null)
+                            {
+                                server.Send(bodyBuffer, bodyBuffer.Length, remoteEP);
+                            }
+                        }
+                    }                   
                 }
             }
             catch (SocketException ex)
@@ -96,7 +93,7 @@ namespace server_sip_alg.Services
                         RequestBody = packageRequest.ToString().Substring(indexHeader + 4, packageRequest.Length - 4 - indexHeader)
                     };
 
-                    if (commInfo.RequestFirstLine.Substring(0, Constants.SIZE_FIRST_LINE_REQUEST) == "INVITE sip:sip-alg-detector-ttec@")
+                    if (commInfo.RequestFirstLine.Substring(0, Constants.SIZE_FIRST_LINE_REQUEST) == "INVITE sip:sip-alg-detector-" + Constants.PRODUCT_NAME + "@")
                     {
                         headerBuffer = _reponseService.CreateMirrorHeader(commInfo);
                         bodyBuffer = _reponseService.CreateMirrorBody(commInfo);

@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.RegularExpressions;
 using Serilog.Core;
 
 namespace client_sip_alg.Service
@@ -82,7 +78,7 @@ namespace client_sip_alg.Service
         {
             byte[] buffer;
 
-            string request = _requestService.CreateStringRequest(IPAddress.Loopback.ToString(), Constants.TCP_TRANSPORT);
+            string request = _requestService.CreateStringRequest(General.GetLocalIp(), Constants.TCP_TRANSPORT);
 
             buffer = Encoding.ASCII.GetBytes(request);
 

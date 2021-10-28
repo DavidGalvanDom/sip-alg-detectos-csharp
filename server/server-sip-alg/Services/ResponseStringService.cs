@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 using server_sip_alg.Model;
 using server_sip_alg.Utils;
@@ -12,7 +13,7 @@ namespace server_sip_alg.Services
         {
             byte[] buffer;
 
-            string responseFirstLine = "SIP/2.0 180 Body contains mirrored request first line and headers\r\n";
+            string responseFirstLine = $"SIP/2.0 180 Body contains mirrored request first line and headers{Environment.NewLine}";
             string headerResponsBody = General.Base64Encode(communicaitonInfo.RequestHeaders + "\r\n\r\n");
             headerResponsBody = headerResponsBody.SpliceText(Constants.SIZE_APLICE_BODY);
             string responseHeaders = (string)communicaitonInfo.RequestHeaders.Clone();
@@ -39,7 +40,7 @@ namespace server_sip_alg.Services
             byte[] buffer;
 
             /// Generate a 500 reply containing the mirrored request body.            
-            string responseFirstLine = "SIP/2.0 500 Body contains mirrored request body\r\n";
+            string responseFirstLine = $"SIP/2.0 500 Body contains mirrored request body{Environment.NewLine}";
             string responsBody = General.Base64Encode(communicaitonInfo.RequestBody);
             responsBody = responsBody.SpliceText(Constants.SIZE_APLICE_BODY); 
             string responseHeaders = (string)communicaitonInfo.RequestHeaders.Clone();

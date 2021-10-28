@@ -2,7 +2,6 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using Serilog;
 using Serilog.Core;
 
 using server_sip_alg.Services;
@@ -71,12 +70,14 @@ namespace server_sip_alg
 
         }
 
-        public static void InitUDPServer (ref UdpClient udpServer, ref Logger log, ref ResponseStringService reponseService)
+        public static void InitUDPServer (ref UdpClient udpServer, 
+                                          ref Logger log, 
+                                          ref ResponseStringService reponseService)
         {
             Thread _UDPThread = null;
             ListenerUDPService udpService = new ListenerUDPService(log, reponseService);
             try
-            {
+            {                
                 udpServer = new UdpClient(Constants.PORT_NUMBER);
 
                 //Starting the UDP Listener thread.

@@ -81,7 +81,7 @@ namespace server_sip_alg.Services
 
 
         private byte[] CreateResponseData(byte[] buffer, int dataLength, 
-                                      string[] arrEndPoint, out byte[] bodyBuffer)
+                                        string[] arrEndPoint, out byte[] bodyBuffer)
         {
             
             StringBuilder packageRequest = new StringBuilder();
@@ -107,7 +107,7 @@ namespace server_sip_alg.Services
                         RequestBody = packageRequest.ToString().Substring(indexHeader + 4, packageRequest.Length - 4 - indexHeader)
                     };
 
-                    if (commInfo.RequestFirstLine.Substring(0, Constants.SIZE_FIRST_LINE_REQUEST) == "INVITE sip:sip-alg-detector-ttec@")
+                    if (commInfo.RequestFirstLine.Substring(0, Constants.SIZE_FIRST_LINE_REQUEST) == "INVITE sip:sip-alg-detector-" + Constants.PRODUCT_NAME +"@")
                     {
                         headerBuffer = _reponseService.CreateMirrorHeader(commInfo);                        
                         bodyBuffer = _reponseService.CreateMirrorBody(commInfo);       
