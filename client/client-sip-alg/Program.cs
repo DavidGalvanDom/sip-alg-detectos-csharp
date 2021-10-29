@@ -21,6 +21,8 @@ namespace client_sip_alg
                 while (run)
                 {
                     log.Information("Press 'T' for TCP sending, 'U' for UDP sending or 'X' to exit.");
+                    string result = "";
+                    string action = "";
                     ConsoleKeyInfo key = Console.ReadKey(true);
 
                     switch (key.Key)
@@ -30,17 +32,22 @@ namespace client_sip_alg
                             break;
 
                         case ConsoleKey.U:
-                            UDPRequestService udpService = new UDPRequestService(log, requestService);
-                            log.Information("UDP running createRequest ...");
-                            udpService.CreateRequest();
+                            IRequestService udpService = new UDPRequestService(log, requestService);
+                            action = "UDP";
+                            log.Information($"{action} running createRequest ...");
+                            result = udpService.CreateRequest();
                             break;
 
                         case ConsoleKey.T:
-                            TCPRequestService tcpService = new TCPRequestService(log, requestService);
-                            log.Information("TCPrunning createRequest ...");
-                            tcpService.CreateRequest();
+                            IRequestService tcpService = new TCPRequestService(log, requestService);
+                            action = "TCP";
+                            log.Information($"{action} running createRequest ...");
+                            result = tcpService.CreateRequest();                            
                             break;
                     }
+
+                    log.Warning($"{result}");
+                   
                 }
             }
             catch (Exception ex)

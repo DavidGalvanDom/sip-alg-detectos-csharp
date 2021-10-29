@@ -19,6 +19,9 @@ namespace client_sip_alg.Service
 
         public string CreateStringRequest(string ipLocal, string transport)
         {
+            ipLocal = string.IsNullOrEmpty(ipLocal) ? "170.0.0.1" : ipLocal;
+            transport = string.IsNullOrEmpty(transport) ? Constants.TCP_TRANSPORT : transport;
+
             //To test the public serve  
             string headerName = Constants.SERVER == "199.180.223.109" ? "daemon" : Constants.PRODUCT_NAME;
 
@@ -56,6 +59,8 @@ namespace client_sip_alg.Service
 
         public string GetMirrorRequest(string mirrorRequest)
         {
+            if (string.IsNullOrEmpty(mirrorRequest)) return string.Empty;
+
             string[] stringNewLine = new string[] { "\r\n" };
             string origenMirrorRequest;
             var arrMirrorRequest = mirrorRequest.Split(stringNewLine, StringSplitOptions.None);
@@ -80,18 +85,25 @@ namespace client_sip_alg.Service
 
         public bool CompareRequestAndMirror(string request, string mirrorRequest, string transport)
         {
+            bool areDifference = false;
+
+            if (string.IsNullOrEmpty(request) || string.IsNullOrEmpty(mirrorRequest)) return true;
+
             var lstDiff = request.StringCompareRequest(mirrorRequest);
 
             if (lstDiff.Count > 0)
             {
+                areDifference = true;
                 _log.Error($"{transport} there are differences between sent request and received mirrored request:");
 
-                foreach (var diff in lstDiff) _log.Warning(diff);
-                return true;
+                foreach (var diff in lstDiff) _log.Warning(diff);                
+            }
+            else
+            {
+                _log.Information($"{transport} No differences between sent request and received mirrored request");
             }
 
-            _log.Information($"{transport} No differences between sent request and received mirrored request");
-            return false;
+            return areDifference;
 
         }
     }

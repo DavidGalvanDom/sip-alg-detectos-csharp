@@ -6,13 +6,24 @@ The client is executed in a host into the private LAN.
 The server runs in a server with public IP.
 Both the client and the server and written in c# language.
 
+Base on the existing project on Ruby
+[Git Repository](https://github.com/ibc/sip-alg-detector)
 
-<p> Server </p>
+## Server
 
 1. Serilog labrary
 2. TCP implementation
-3. xUnit project to test. 
-4. 
-
+3. UDP implementation
 
 <h4> Working in progress... </h4>
+
+4. xUnit project to test.
+5. Install the server as a windows service.
+
+## About SIP ALG
+
+Many of today's commercial routers implement SIP ALG, coming with this feature enabled by default.
+
+An ALG (Application-level gateway) understands the protocol used by the specific applications that it supports (in this case SIP) and does a protocol packet-inspection of traffic through it. A NAT router with a built-in SIP ALG can re-write information within the SIP messages (SIP headers and SDP body) making signaling and audio traffic between the client behind NAT and the SIP endpoint possible. While ALG could help in solving NAT related problems, the fact is that most of the routers ALG implementations are wrong and break SIP.
+
+More information about SIP ALG in [Voip-Info.org](http://www.voip-info.org/wiki/view/Routers+SIP+ALG).

@@ -58,6 +58,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\ClientRequestService.cs" />
+    <Compile Include="Service\IRequestService.cs" />
     <Compile Include="Service\TCPRequestService.cs" />
     <Compile Include="Service\UDPRequestService.cs" />
     <Compile Include="ConfigLog.cs" />

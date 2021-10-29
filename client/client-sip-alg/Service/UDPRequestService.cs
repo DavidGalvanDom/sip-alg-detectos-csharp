@@ -7,7 +7,7 @@ using Serilog.Core;
 
 namespace client_sip_alg.Service
 {
-    public class UDPRequestService
+    public class UDPRequestService: IRequestService
     {
         private readonly Logger _log;
         private readonly ClientRequestService _requestService;
@@ -19,13 +19,28 @@ namespace client_sip_alg.Service
         {
             _log = log;
             _requestService = requestService;
-            _endPoint = new IPEndPoint(IPAddress.Parse(Constants.SERVER), 
-                                       Constants.PORT_NUMBER_SERVER);
+
+            ConfigClient();
         }
 
-        public  void CreateRequest()
+        private void ConfigClient ()
         {
+            _endPoint = new IPEndPoint(IPAddress.Parse(Constants.SERVER),
+                                       Constants.PORT_NUMBER_SERVER);
+
+            _udpClient = new UdpClient(Constants.PORT_NUMBER_LOCAL);
+            _udpClient.Client.SendTimeout = Constants.NUM_TIMEOUT_WRITE;
+            _udpClient.Client.ReceiveTimeout = Constants.NUM_TIMEOUT_READ;
+            
+        }
+
+        public string CreateRequest()
+        {
+            bool isUDPSipAlgEnabled = false;
+            string processStatus = "Process finish, SIP ALG is ";
+
             StringBuilder responseData = new StringBuilder();
+
             try
             {
                 var packageRequest = SendRequest();               
@@ -42,33 +57,35 @@ namespace client_sip_alg.Service
                     responseData.Append(System.Text.Encoding.ASCII.GetString(arrResponseBody, 0, arrResponseBody.Length));
                 }
 
-
                 if (responseData.Length < Constants.NUM_MINIMAL_PACKAGE_SIZE)
                 {
-                    _log.Error($"{Constants.UDP_TRANSPORT} Response size invalid: {responseData}");
-                    return;
+                    processStatus = $"{Constants.UDP_TRANSPORT} Response size invalid: {responseData}";
+                    _log.Error(processStatus);
+                    return processStatus;                    
                 }
 
                 string mirrorRequest = _requestService.GetMirrorRequest(responseData.ToString());
-                bool udpAlgTest = false;
+                
                 if (mirrorRequest.Trim() != string.Empty)
                 {
-                    udpAlgTest = _requestService.CompareRequestAndMirror(packageRequest, mirrorRequest, Constants.UDP_TRANSPORT);
+                    isUDPSipAlgEnabled = _requestService.CompareRequestAndMirror(packageRequest, mirrorRequest, Constants.UDP_TRANSPORT);
                 }
                 else
                 {
-                    _log.Error($"{Constants.UDP_TRANSPORT} Server no data response {Environment.NewLine}");
-                    return;
+                    processStatus = $"{Constants.UDP_TRANSPORT} Server no data response {Environment.NewLine}";
+                    _log.Error(processStatus);
+                    return processStatus;
                 }
 
-                if (udpAlgTest)
+                if (isUDPSipAlgEnabled)
                     _log.Warning($"{Constants.UDP_TRANSPORT} It seems that your router is performing ALG for SIP {Constants.UDP_TRANSPORT}");
                 else
                     _log.Information($"{Constants.UDP_TRANSPORT} It seems that your router is not performing ALG for SIP {Constants.UDP_TRANSPORT}");
             }
             catch(Exception exp)
             {
-                _log.Error(exp, $"{Constants.UDP_TRANSPORT} CreateRequest {Environment.NewLine}");
+                processStatus = $"{Constants.UDP_TRANSPORT} CreateRequest {Environment.NewLine}";
+                _log.Error(exp, processStatus);
             }
             finally
             {
@@ -77,6 +94,8 @@ namespace client_sip_alg.Service
                 if (_udpClient != null)
                     _udpClient.Dispose();
             }
+
+            return processStatus + (isUDPSipAlgEnabled  ? " is enabled" : " is NOT enabled");
         }
 
         private string SendRequest()
@@ -85,13 +104,6 @@ namespace client_sip_alg.Service
                         
             string request = _requestService.CreateStringRequest(General.GetLocalIp(), Constants.UDP_TRANSPORT);
             buffer = Encoding.ASCII.GetBytes(request);
-
-            if(_udpClient == null)
-            {
-                _udpClient = new UdpClient(Constants.PORT_NUMBER_LOCAL);
-                _udpClient.Client.SendTimeout = Constants.NUM_TIMEOUT_WRITE;
-                _udpClient.Client.ReceiveTimeout = Constants.NUM_TIMEOUT_READ;
-            }
 
             _udpClient.Send(buffer, buffer.Length, _endPoint);
 
