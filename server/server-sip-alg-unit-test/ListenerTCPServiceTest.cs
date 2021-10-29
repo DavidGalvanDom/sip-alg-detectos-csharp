@@ -4,7 +4,7 @@ using System;
 namespace server_sip_alg_unit_test
 {
     [TestClass]
-    public class TCPServiceTest
+    public class ListenerTCPServiceTest
     {
         [TestMethod]
         public void TestMethod1()

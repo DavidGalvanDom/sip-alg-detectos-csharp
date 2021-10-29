@@ -4,7 +4,7 @@ namespace server_sip_alg
     public static class Constants
     {
 
-        public const string PRODUCT_NAME = "ttec";
+        public const string PRODUCT_NAME = "test";
 
         public const int PORT_NUMBER = 5060;
         public const int NUM_MAX_CONNECTE = 150;

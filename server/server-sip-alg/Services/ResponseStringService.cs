@@ -11,6 +11,8 @@ namespace server_sip_alg.Services
     {
         public byte[] CreateMirrorHeader(CommunicationInfo communicaitonInfo)
         {
+            if (communicaitonInfo == null) return null;
+
             byte[] buffer;
 
             string responseFirstLine = $"SIP/2.0 180 Body contains mirrored request first line and headers{Environment.NewLine}";
@@ -37,6 +39,8 @@ namespace server_sip_alg.Services
 
         public byte[] CreateMirrorBody(CommunicationInfo communicaitonInfo)
         {
+            if (communicaitonInfo == null) return null;
+
             byte[] buffer;
 
             /// Generate a 500 reply containing the mirrored request body.            
@@ -65,6 +69,9 @@ namespace server_sip_alg.Services
         // Generate a 403 error response
         public byte[] GenerateErrorResponse(CommunicationInfo communicaitonInfo)
         {
+
+            if (communicaitonInfo == null) return null;
+
             byte[] buffer;
             
             // IF an ACK ignore it.
