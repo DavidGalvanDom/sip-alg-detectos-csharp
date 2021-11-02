@@ -19,10 +19,10 @@ Base on the existing project on Ruby
    - Build the server project with Release configuration
    - Copy the files to the install folder
    - Example sip-alg-detectors-csharp\server\deploy-server-as-windows
-   - To install the application as a windows service
-     server-si-alg-windows-service.exe install start
-   - To uninstall
-     server-si-alg-windows-service.exe uninstall
+   - To install the application as a windows service <br />
+     <strong>server-si-alg-windows-service.exe install start</strong>
+   - To uninstall <br />
+     <strong>server-si-alg-windows-service.exe uninstall</strong>
 
 ## Diagram
 
