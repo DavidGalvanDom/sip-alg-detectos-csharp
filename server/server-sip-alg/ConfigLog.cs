@@ -11,7 +11,7 @@ namespace server_sip_alg
             Logger log = new LoggerConfiguration()
                       .WriteTo.Console(theme: AnsiConsoleTheme.Code,
                                        outputTemplate: "{Timestamp:HH:mm:ss} [{Level:u3}] {SourceContext} - {Message:lj}{NewLine}{Exception}")
-                      .WriteTo.File("Sip-alg-log.txt")
+                       .WriteTo.File(@"c:\Log\sip-alg-server.log",rollingInterval: RollingInterval.Day)                      
                       .CreateLogger();
 
             return log;

@@ -1,30 +1,26 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using Serilog.Core;
-
-using server_sip_alg.Model;
 
 namespace server_sip_alg.Services
 {
-    public class ListenerUDPService
+    public class ListenerUDPService: IListenerService
     {
         private readonly Logger _log;
-        private readonly ResponseStringService _reponseService;
+        private readonly RequestControllerService _requestControllerService;
 
-        public ListenerUDPService(Logger log, ResponseStringService reponseService)
+        public ListenerUDPService(Logger log, RequestControllerService requestControllerService)
         {
             _log = log;
-            _reponseService = reponseService;
+            _requestControllerService = requestControllerService;
         }
 
-        public void UDPServer(object arg)
+        public void StartServer(object arg)
         {
             UdpClient server = (UdpClient)arg;
             IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, Constants.PORT_NUMBER); ;
             byte[] buffer;
-            byte[] bodyBuffer;
 
             try
             {
@@ -36,17 +32,18 @@ namespace server_sip_alg.Services
 
                     if (buffer != null
                         && buffer.Length != 19 )
-                    {                        
-                        var headerBuffer = CreateResponseData(buffer, buffer.Length,
-                                                            remoteEP.Address.ToString(), remoteEP.Port.ToString(),
-                                                            out bodyBuffer);
-                        if (headerBuffer != null)
+                    {
+                        var resposeData = _requestControllerService
+                                            .CreateResponseData(buffer, buffer.Length,
+                                                                remoteEP.Address.ToString(),  remoteEP.Port.ToString(), 
+                                                                server_sip_alg.Constants.UDP_TRANSPORT);
+                        if (resposeData.RequestHeader != null)
                         {
-                            server.Send(headerBuffer, headerBuffer.Length, remoteEP);
+                            server.Send(resposeData.RequestHeader, resposeData.RequestHeader.Length, remoteEP);
 
-                            if (bodyBuffer != null)
+                            if (resposeData.RequestBody != null)
                             {
-                                server.Send(bodyBuffer, bodyBuffer.Length, remoteEP);
+                                server.Send(resposeData.RequestBody, resposeData.RequestBody.Length, remoteEP);
                             }
                         }
                     }                   
@@ -63,62 +60,6 @@ namespace server_sip_alg.Services
             }
 
             _log.Information("UDP server thread finished");
-        }
-
-        private byte[] CreateResponseData(byte[] buffer, int dataLength,
-                                          string ipServer, string portServer, 
-                                          out byte[] bodyBuffer)
-        {
-
-            StringBuilder packageRequest = new StringBuilder();
-            byte[] headerBuffer = null;
-            bodyBuffer = null;
-
-            try
-            {
-                _log.Information($"UDP Create response - Stream count:{dataLength}");
-
-                packageRequest.Append(Encoding.ASCII.GetString(buffer, 0, dataLength));
-
-                if (packageRequest.Length > Constants.SIZE_MIN_PACKAGES_REQUEST)
-                {
-                    int indexHeader = packageRequest.ToString().IndexOf("\r\n\r\n");
-
-                    CommunicationInfo commInfo = new CommunicationInfo
-                    {
-                        IpSender = ipServer,
-                        PortSender = portServer,
-                        RequestFirstLine = packageRequest.ToString().Substring(0, packageRequest.ToString().IndexOf("\r\n")),
-                        RequestHeaders = packageRequest.ToString().Substring(0, indexHeader),
-                        RequestBody = packageRequest.ToString().Substring(indexHeader + 4, packageRequest.Length - 4 - indexHeader)
-                    };
-
-                    if (commInfo.RequestFirstLine.Substring(0, Constants.SIZE_FIRST_LINE_REQUEST) == "INVITE sip:sip-alg-detector-" + Constants.PRODUCT_NAME + "@")
-                    {
-                        headerBuffer = _reponseService.CreateMirrorHeader(commInfo);
-                        bodyBuffer = _reponseService.CreateMirrorBody(commInfo);
-                        _log.Information("UDP Finish response.");
-                    }
-                    else
-                    {
-                        headerBuffer = _reponseService.GenerateErrorResponse(commInfo);
-                        _log.Error(" UDP Finish with error response.");
-                    }
-
-                    packageRequest.Clear();
-                }
-            }
-            catch (Exception exp)
-            {
-                headerBuffer = null;
-                _log.Error(exp, $"UDP Package: {packageRequest}");
-            }
-            finally
-            {
-                packageRequest.Clear();
-            }
-
-            return headerBuffer;
         }
 
     }

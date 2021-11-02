@@ -8,23 +8,24 @@ using server_sip_alg.Model;
 
 namespace server_sip_alg.Services
 {
-    public class ListenerTCPService
+    public class ListenerTCPService: IListenerService
     {
-        private readonly Logger _log;
-        private readonly ResponseStringService _reponseService;
+        private readonly Logger _log;       
+        private readonly RequestControllerService _requestControllerService;
 
-        public ListenerTCPService(Logger log, ResponseStringService reponseService)
+        public ListenerTCPService(Logger log, 
+                                  RequestControllerService requestControllerService)
         {
-            _log = log;
-            _reponseService = reponseService;
+            _log = log;           
+            _requestControllerService = requestControllerService;
         }
 
-        public void TCPServer(object arg)
+        public void StartServer(object arg)
         {
-            _log.Information("TCP server thread started");
-
             try
             {
+                _log.Information("TCP server thread started");
+
                 TcpListener server = (TcpListener)arg;
                 server.Start();
 
@@ -33,25 +34,31 @@ namespace server_sip_alg.Services
                     try
                     {
                         TcpClient client = server.AcceptTcpClient();
+                      
                         var arrEndPoint = client.Client.RemoteEndPoint.ToString().Split(':');
+                        string ipRemote = arrEndPoint[0];
+                        string portRemote = arrEndPoint[1];
+
                         byte[] buffer = new byte[Constants.SIZE_READ_BUFFER];
-                        byte[] bodyBuffer = null;
                         int dataLength;
 
                         using (var stream = client.GetStream())
                         {
                             while ((dataLength = stream.Read(buffer, 0, buffer.Length)) != 0)
                             {
-                                var headerBuffer = CreateResponseData(buffer, dataLength, arrEndPoint, out bodyBuffer);
+                                var resposeData = _requestControllerService
+                                                    .CreateResponseData(buffer, dataLength, 
+                                                                        ipRemote, portRemote, 
+                                                                        server_sip_alg.Constants.TCP_TRANSPORT);
 
-                                if( headerBuffer != null)
+                                if(resposeData.RequestHeader != null)
                                 {
-                                    stream.Write(headerBuffer, 0, headerBuffer.Length);
+                                    stream.Write(resposeData.RequestHeader, 0, resposeData.RequestHeader.Length);
                                     stream.Flush();
 
-                                    if(bodyBuffer != null)
+                                    if(resposeData.RequestBody != null)
                                     {
-                                        stream.Write(bodyBuffer, 0, bodyBuffer.Length);                               
+                                        stream.Write(resposeData.RequestBody, 0, resposeData.RequestBody.Length);                               
                                         stream.Flush();
                                     }
                                 }
@@ -80,59 +87,6 @@ namespace server_sip_alg.Services
         }
 
 
-        private byte[] CreateResponseData(byte[] buffer, int dataLength, 
-                                        string[] arrEndPoint, out byte[] bodyBuffer)
-        {
-            
-            StringBuilder packageRequest = new StringBuilder();
-            byte[] headerBuffer = null;
-            bodyBuffer = null;
-
-            try
-            {
-                _log.Information($"TCP Request read - Stream count:{dataLength}");
-
-                packageRequest.Append(Encoding.ASCII.GetString(buffer, 0, dataLength));
-
-                if (packageRequest.Length > Constants.SIZE_MIN_PACKAGES_REQUEST)
-                {
-                    int indexHeader = packageRequest.ToString().IndexOf("\r\n\r\n");
-
-                    CommunicationInfo commInfo = new CommunicationInfo
-                    {
-                        IpSender = arrEndPoint[0],
-                        PortSender = arrEndPoint[1],
-                        RequestFirstLine = packageRequest.ToString().Substring(0, packageRequest.ToString().IndexOf("\r\n")),
-                        RequestHeaders = packageRequest.ToString().Substring(0, indexHeader),
-                        RequestBody = packageRequest.ToString().Substring(indexHeader + 4, packageRequest.Length - 4 - indexHeader)
-                    };
-
-                    if (commInfo.RequestFirstLine.Substring(0, Constants.SIZE_FIRST_LINE_REQUEST) == "INVITE sip:sip-alg-detector-" + Constants.PRODUCT_NAME +"@")
-                    {
-                        headerBuffer = _reponseService.CreateMirrorHeader(commInfo);                        
-                        bodyBuffer = _reponseService.CreateMirrorBody(commInfo);       
-                        _log.Information("TCP Finish response.");
-                    }
-                    else
-                    {
-                        headerBuffer = _reponseService.GenerateErrorResponse(commInfo);
-                        _log.Error(" TCP Finish with error response.");
-                    }
-
-                    packageRequest.Clear();
-                }
-            }
-            catch (Exception exp)
-            {
-                headerBuffer = null;
-                _log.Error(exp, $"TCP Package: {packageRequest}");                         
-            }
-            finally
-            {
-                packageRequest.Clear();
-            }
-
-            return headerBuffer;
-        }
+       
     }
 }

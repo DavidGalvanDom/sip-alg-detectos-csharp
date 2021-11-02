@@ -11,14 +11,18 @@ Base on the existing project on Ruby
 
 ## Server
 
-1. Serilog labrary
+1. Serilog library
 2. TCP implementation
 3. UDP implementation
-
-<h4> Working in progress... </h4>
-
 4. xUnit project to test.
 5. Install the server as a windows service.
+   - Build the server project with Release configuration
+   - Copy the files to the install folder
+   - Example sip-alg-detectors-csharp\server\deploy-server-as-windows
+   - To install the application as a windows service
+     server-si-alg-windows-service.exe install start
+   - To uninstall
+     server-si-alg-windows-service.exe uninstall
 
 ## Diagram
 

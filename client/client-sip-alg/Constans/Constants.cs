@@ -6,10 +6,11 @@ namespace client_sip_alg
         public const string PRODUCT_NAME = "test";
 
         public const int PORT_NUMBER_SERVER = 5060; //Port of the server when the daemon runs. Default "5060".
-        public const int PORT_NUMBER_LOCAL = 5060; //Local port from which UDP request will be sent. Default "5060".
+        public const int PORT_NUMBER_LOCAL = 5061; //Local port from which UDP request will be sent. Default "5061".
 
-        public const string SERVER = "127.0.0.1";       
-       // public const string SERVER = "199.180.223.109"; //Public server test 
+        public const string SERVER = "127.0.0.1";
+       // public const string SERVER = "10.48.247.190"; //10.48.247.190  170.65.129.66
+        // public const string SERVER = "199.180.223.109"; //Public server test 
 
         public const int NUM_MAX_CONNECTE = 150;
 

@@ -33,8 +33,7 @@ namespace client_sip_alg.Service
 
                 if (responseData.Length < Constants.NUM_MINIMAL_PACKAGE_SIZE)
                 {
-                    processStatus = $"{Constants.TCP_TRANSPORT} Response size invalid: {responseData}";
-                    _log.Error(processStatus);
+                    processStatus = $"{Constants.TCP_TRANSPORT} Access denied: {responseData}";
                     return processStatus;
                 }
 
@@ -123,15 +122,15 @@ namespace client_sip_alg.Service
             while (bytes > 0)
             {
                 responseData.Append(System.Text.Encoding.ASCII.GetString(dataResponse, 0, bytes));
-
-                if (bytes < Constants.NUM_PACAGE_RESPONSE_SIZE_BYTES &&
-                    totalReceivedBytes > Constants.NUM_MINIMAL_PACKAGE_SIZE)
+              
+                if (_tcpStream.DataAvailable &&
+                    totalReceivedBytes < Constants.NUM_MINIMAL_PACKAGE_SIZE) 
                 {
-                    return responseData.ToString();
+                    bytes = _tcpStream.Read(dataResponse, 0, dataResponse.Length);
                 }
                 else
                 {
-                    bytes = _tcpStream.Read(dataResponse, 0, dataResponse.Length);
+                    return responseData.ToString();                    
                 }
 
                 totalReceivedBytes += bytes;

@@ -20,7 +20,7 @@ namespace client_sip_alg
             {            
                 while (run)
                 {
-                    log.Information("Press 'T' for TCP sending, 'U' for UDP sending or 'X' to exit.");
+                    log.Information($"{Environment.NewLine} ***************  Press 'T' for TCP sending, 'U' for UDP sending or 'X' to exit. *************** ");
                     string result = "";
                     string action = "";
                     ConsoleKeyInfo key = Console.ReadKey(true);

@@ -59,8 +59,7 @@ namespace client_sip_alg.Service
 
                 if (responseData.Length < Constants.NUM_MINIMAL_PACKAGE_SIZE)
                 {
-                    processStatus = $"{Constants.UDP_TRANSPORT} Response size invalid: {responseData}";
-                    _log.Error(processStatus);
+                    processStatus = $"{Constants.UDP_TRANSPORT} Access denied: {responseData}";
                     return processStatus;                    
                 }
 
