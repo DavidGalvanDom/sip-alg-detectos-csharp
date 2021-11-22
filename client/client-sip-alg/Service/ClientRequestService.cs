@@ -62,7 +62,7 @@ namespace client_sip_alg.Service
             if (string.IsNullOrEmpty(mirrorRequest)) return string.Empty;
 
             string[] stringNewLine = new string[] { "\r\n" };
-            string origenMirrorRequest;
+            string origenMirrorRequest = string.Empty;
             var arrMirrorRequest = mirrorRequest.Split(stringNewLine, StringSplitOptions.None);
 
             // 100: Request first line and headers
@@ -76,10 +76,20 @@ namespace client_sip_alg.Service
             var mirrorHead = newArr.Take(newArr.Length - 1);
 
             string mirrorRequestFirstLineHeaders = General.Base64Decode(string.Join("", mirrorHead));
-            string mirrorRequestBody = General.Base64Decode(arrMirrorRequest[arrMirrorRequest.Length - 1]);
-
-            origenMirrorRequest = mirrorRequestFirstLineHeaders + mirrorRequestBody;
-
+            
+            int contetLength = General.GetContentLength(arrMirrorRequest[arrMirrorRequest.Length - 3]);
+            string mirrorRequestBodyCode = arrMirrorRequest[arrMirrorRequest.Length - 1];
+            
+            if (contetLength < mirrorRequestBodyCode.Length)
+            {
+                string mirrorRequestBody = General.Base64Decode(mirrorRequestBodyCode);
+                origenMirrorRequest = mirrorRequestFirstLineHeaders + mirrorRequestBody;
+            }                
+            else
+            {
+                _log.Error($"Server response Body Length error with the contetLength: {contetLength} VS {mirrorRequestBodyCode.Length} {Environment.NewLine }  {mirrorRequestBodyCode}");
+            }
+             
             return origenMirrorRequest;
         }
 

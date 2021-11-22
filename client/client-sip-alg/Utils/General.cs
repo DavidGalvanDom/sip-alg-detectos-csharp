@@ -42,7 +42,7 @@ namespace client_sip_alg
         }
 
         public static string Base64Decode(string base64EncodedData)
-        {
+        {                       
             var base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
             return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
         }
@@ -55,6 +55,16 @@ namespace client_sip_alg
                 return ipResult[0].ToString();
             else
                 return "170.0.0.1";
+        }
+
+        public static int GetContentLength(string contentLength) 
+        {
+            var arrContent = contentLength.Split(':');
+
+            if (arrContent.Length == 2)
+                return Convert.ToInt32(arrContent[1]);
+
+            return -1;
         }
     }
 }

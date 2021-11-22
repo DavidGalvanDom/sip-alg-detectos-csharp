@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using Serilog.Core;
 
 namespace client_sip_alg.Service
@@ -24,10 +25,10 @@ namespace client_sip_alg.Service
             string processStatus = "Process finish, SIP ALG is ";
 
             try
-            {
-                string packageRequest = SendRequest();
+            {                
+                string packageRequest = SendRequest();             
                 string responseData = ReadResponse();
-
+                               
                 _tcpStream.Close();
                 _tcpClient.Close();
 
@@ -116,17 +117,20 @@ namespace client_sip_alg.Service
             byte[] dataResponse = new Byte[Constants.NUM_PACAGE_RESPONSE_SIZE_BYTES];
             StringBuilder responseData = new StringBuilder();
 
+            Thread.Sleep(100);
+
             bytes = _tcpStream.Read(dataResponse, 0, dataResponse.Length);
             totalReceivedBytes += bytes;
 
             while (bytes > 0)
             {
                 responseData.Append(System.Text.Encoding.ASCII.GetString(dataResponse, 0, bytes));
-              
+
                 if (_tcpStream.DataAvailable &&
                     totalReceivedBytes < Constants.NUM_MINIMAL_PACKAGE_SIZE) 
                 {
                     bytes = _tcpStream.Read(dataResponse, 0, dataResponse.Length);
+                    Thread.Sleep(100);
                 }
                 else
                 {

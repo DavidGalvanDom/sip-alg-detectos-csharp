@@ -1,0 +1,43 @@
+﻿SIP/2.0 180 Body contains mirrored request first line and headers
+Server: SipAlgDetectorDaemon
+Via: SIP/2.0/TCP 192.168.100.72:5061;received=170.65.129.20;rport=6871;branch=z9hG4bKktvvejyr
+Max-Forwards: 5
+To: <sip:sip-alg-detector-TTEC@170.65.129.66:5060>; tag=361418
+From: "SIP ALG Detector" <sip:sip-alg-detector@killing-alg-routers.war>;tag=ktvvejyr
+Call-ID: ktvvejyrgb@192.168.100.72
+CSeq: 269 INVITE
+Contact: <sip:0123@192.168.100.72:5061;transport=TCP>
+Allow: INVITE
+Content-Type: text/plain
+Content-Length: 626
+
+SU5WSVRFIHNpcDpzaXAtYWxnLWRldGVjdG9yLVRURUNAMTcwLjY1LjEyOS42
+Njo1MDYwIFNJUC8yLjANClZpYTogU0lQLzIuMC9UQ1AgMTkyLjE2OC4xMDAu
+NzI6NTA2MTtycG9ydDticmFuY2g9ejloRzRiS2t0dnZlanlyDQpNYXgtRm9y
+d2FyZHM6IDUNClRvOiA8c2lwOnNpcC1hbGctZGV0ZWN0b3ItVFRFQ0AxNzAu
+NjUuMTI5LjY2OjUwNjA+DQpGcm9tOiAiU0lQIEFMRyBEZXRlY3RvciIgPHNp
+cDpzaXAtYWxnLWRldGVjdG9yQGtpbGxpbmctYWxnLXJvdXRlcnMud2FyPjt0
+YWc9a3R2dmVqeXINCkNhbGwtSUQ6IGt0dnZlanlyZ2JAMTkyLjE2OC4xMDAu
+NzINCkNTZXE6IDI2OSBJTlZJVEUNCkNvbnRhY3Q6IDxzaXA6MDEyM0AxOTIu
+MTY4LjEwMC43Mjo1MDYxO3RyYW5zcG9ydD1UQ1A+DQpBbGxvdzogSU5WSVRF
+DQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL3NkcA0KQ29udGVudC1MZW5n
+dGg6IDI1Ng0KDQo=
+SIP/2.0 500 Body contains mirrored request body
+Server: SipAlgDetectorDaemon
+Via: SIP/2.0/TCP 192.168.100.72:5061;received=170.65.129.20;rport=6871;branch=z9hG4bKktvvejyr
+Max-Forwards: 5
+To: <sip:sip-alg-detector-TTEC@170.65.129.66:5060>;tag=322377
+From: "SIP ALG Detector" <sip:sip-alg-detector@killing-alg-routers.war>;tag=ktvvejyr
+Call-ID: ktvvejyrgb@192.168.100.72
+CSeq: 269 INVITE
+Contact: <sip:0123@192.168.100.72:5061;transport=TCP>
+Allow: INVITE
+Content-Type: text/plain
+Content-Length: 349
+
+dj0zDQpvPWt0dnZlanlyIDM1NTUxMjY0IDM1NTUxMjYgSU4gSVA0IDE4Ny4x
+ODkuMTU1LjIwNw0Kcz0tDQpjPUlOIElQNCAxODcuMTg5LjE1NS4yMDcNCnQ9
+MCAwDQptPWF1ZGlvIDY5MTQgUlRQL0FWUCA4IDAgMyAxMDENCmE9cnRwbWFw
+OjggUENNQS84MDAwDQphPXJ0cG1hcDowIFBDTVUvODAwMA0KYT1ydHBtYXA6
+MyBHU00vODAwMA0KYT1ydHBtYXA6MTAxIHRlbGVwaG9uZS1ldmVudC84MDAw
+DQphPWZtdHA6MTAxIDAtMTU

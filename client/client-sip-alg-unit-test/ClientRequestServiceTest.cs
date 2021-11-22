@@ -44,6 +44,21 @@ namespace client_sip_alg_unit_test
         }
 
         [TestMethod]
+        public void Call_Methos_GetMirrorRequest_Validate_Base64Decode()
+        {
+            // Arrange
+            var clientService = new ClientRequestService(_log);
+            string mirrorRequest = System.IO.File.ReadAllText(@"ResponseData.txt");
+
+            // Act 
+            var result = clientService.GetMirrorRequest(mirrorRequest);
+
+            // Assert
+            Assert.AreEqual(result.Trim(), string.Empty);
+        }
+
+
+        [TestMethod]
         public void Compare_Data_False_Empty_Data()
         {
             // Arrange
